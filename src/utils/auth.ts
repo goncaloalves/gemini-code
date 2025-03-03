@@ -9,3 +9,8 @@ export function isLoggedInToAnthropic(): boolean {
   const config = getGlobalConfig()
   return !!config.primaryApiKey
 }
+
+export function isGoogleAuthEnabled(): boolean {
+  return !!process.env.GOOGLE_API_KEY;
+}
+
