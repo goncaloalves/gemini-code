@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/entrypoints/cli.js",
-    "dev": "NODE_OPTIONS='--import tsx --no-warnings=ExperimentalWarning --enable-source-maps' tsx watch src/entrypoints/cli.tsx"
+    "dev": "NODE_OPTIONS='--import tsx --no-warnings=ExperimentalWarning --enable-source-maps' tsx src/entrypoints/cli.tsx"
   },
   "dependencies": {
     "@anthropic-ai/bedrock-sdk": "^0.12.4",
