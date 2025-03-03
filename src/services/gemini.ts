@@ -1,28 +1,69 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
+import { Tool } from '../Tool.js';
 
-let geminiClient: GoogleGenerativeAI | null = null;
+let geminiModel: GenerativeModel | null = null;
 
-export function getGeminiClient(): GoogleGenerativeAI {
-  if (geminiClient) {
-    return geminiClient;
+export async function initGemini() {
+  if (!process.env.GOOGLE_API_KEY) {
+    throw new Error('GOOGLE_API_KEY environment variable is not set');
   }
 
-  const apiKey = process.env.GOOGLE_API_KEY;
-  if (!apiKey) {
-    throw new Error('GOOGLE_API_KEY environment variable is required');
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+    geminiModel = genAI.getGenerativeModel({ model: "gemini-2.0-pro-exp-02-05" });
+  return geminiModel;
+}
+
+export async function queryGemini(
+  messages: Array<{role: string, content: string}>,
+  tools?: Tool[]
+) {
+  if (!geminiModel) {
+    await initGemini();
   }
 
-  geminiClient = new GoogleGenerativeAI(apiKey);
-  return geminiClient;
-}
+  try {
+    const chat = geminiModel.startChat({
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.8,
+        topK: 40,
+      },
+      tools: tools?.map(tool => ({
+        functionDeclarations: [{
+          name: tool.name,
+          description: tool.description(),
+          parameters: tool.inputSchema
+        }]
+      }))
+    });
 
-export function resetGeminiClient(): void {
-  geminiClient = null;
-}
+    let lastResponse = '';
 
-export async function generateResponse(prompt: string) {
-  const client = getGeminiClient();
-  const model = client.getGenerativeModel({ model: 'gemini-pro' });
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+    // Process messages and handle tool calls
+    for (const msg of messages) {
+      if (msg.role === 'user') {
+        const result = await chat.sendMessage(msg.content);
+        const response = await result.response;
+        lastResponse = response.text();
+
+        // Handle tool calls if present
+        if (response.candidates?.[0]?.content?.parts?.[0]?.functionCall) {
+          const functionCall = response.candidates[0].content.parts[0].functionCall;
+          const tool = tools?.find(t => t.name === functionCall.name);
+          
+          if (tool) {
+            const toolResult = await tool.call(functionCall.args);
+            // Send tool result back to chat
+            const toolResponse = await chat.sendMessage(JSON.stringify(toolResult));
+            lastResponse = (await toolResponse.response).text();
+          }
+        }
+      }
+    }
+
+    return lastResponse;
+  } catch (error) {
+    console.error('Gemini API Error:', error);
+    throw new Error(`Gemini Error: ${error.message}`);
+  }
 }

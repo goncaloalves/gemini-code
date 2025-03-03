@@ -211,8 +211,8 @@ export const FileWriteTool = {
     // Update read timestamp, to invalidate stale writes
     readFileTimestamps[fullFilePath] = statSync(fullFilePath).mtimeMs
 
-    // Log when writing to CLAUDE.md
-    if (fullFilePath.endsWith(`${sep}CLAUDE.md`)) {
+    // Log when writing to GEMINI.md
+    if (fullFilePath.endsWith(`${sep}GEMINI.md`)) {
       logEvent('tengu_write_claudemd', {})
     }
 

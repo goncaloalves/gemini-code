@@ -30,6 +30,7 @@ import {
 } from './utils/messages.js'
 import { BashTool } from './tools/BashTool/BashTool.js'
 import { getCwd } from './utils/state.js'
+import { queryGemini } from './services/gemini.js';
 
 export type Response = { costUSD: number; response: string }
 export type UserMessage = {
@@ -132,113 +133,44 @@ export async function* query(
     m2: AssistantMessage,
   ) => Promise<BinaryFeedbackResult>,
 ): AsyncGenerator<Message, void> {
-  const fullSystemPrompt = formatSystemPromptWithContext(systemPrompt, context)
+  try {
+    // Format messages for Gemini
+    const formattedMessages = messages.map(msg => ({
+      role: msg.type === 'user' ? 'user' : 'model',
+      content: typeof msg.message.content === 'string' 
+        ? msg.message.content 
+        : msg.message.content.map(c => c.text).join('\n')
+    }));
 
-  function getAssistantResponse() {
-    return querySonnet(
-      normalizeMessagesForAPI(messages),
-      fullSystemPrompt,
-      toolUseContext.options.maxThinkingTokens,
-      toolUseContext.options.tools,
-      toolUseContext.abortController.signal,
-      {
-        dangerouslySkipPermissions:
-          toolUseContext.options.dangerouslySkipPermissions ?? false,
-        model: toolUseContext.options.slowAndCapableModel,
-        prependCLISysprompt: true,
-      },
-    )
-  }
+    // Add system prompt at the beginning
+    formattedMessages.unshift({
+      role: 'system',
+      content: Array.isArray(systemPrompt) ? systemPrompt.join('\n') : systemPrompt
+    });
 
-  const result = await queryWithBinaryFeedback(
-    toolUseContext,
-    getAssistantResponse,
-    getBinaryFeedbackResponse,
-  )
+    const response = await queryGemini(formattedMessages);
+    
+    const assistantMessage = createAssistantMessage(response);
+    yield assistantMessage;
 
-  if (result.message === null) {
-    yield createAssistantMessage(INTERRUPT_MESSAGE)
-    return
-  }
-
-  const assistantMessage = result.message
-  const shouldSkipPermissionCheck = result.shouldSkipPermissionCheck
-
-  yield assistantMessage
-
-  // @see https://docs.anthropic.com/en/docs/build-with-claude/tool-use
-  // Note: stop_reason === 'tool_use' is unreliable -- it's not always set correctly
-  const toolUseMessages = assistantMessage.message.content.filter(
-    _ => _.type === 'tool_use',
-  )
-
-  // If there's no more tool use, we're done
-  if (!toolUseMessages.length) {
-    return
-  }
-
-  const toolResults: UserMessage[] = []
-
-  // Prefer to run tools concurrently, if we can
-  // TODO: tighten up the logic -- we can run concurrently much more often than this
-  if (
-    toolUseMessages.every(msg =>
-      toolUseContext.options.tools.find(t => t.name === msg.name)?.isReadOnly(),
-    )
-  ) {
-    for await (const message of runToolsConcurrently(
-      toolUseMessages,
-      assistantMessage,
-      canUseTool,
-      toolUseContext,
-      shouldSkipPermissionCheck,
-    )) {
-      yield message
-      // progress messages are not sent to the server, so don't need to be accumulated for the next turn
-      if (message.type === 'user') {
-        toolResults.push(message)
+    // Handle tool use if needed
+    if (assistantMessage.message.content.some(c => c.type === 'tool_use')) {
+      for await (const message of handleToolUse(
+        assistantMessage,
+        messages,
+        systemPrompt,
+        context,
+        canUseTool,
+        toolUseContext,
+        getBinaryFeedbackResponse
+      )) {
+        yield message;
       }
     }
-  } else {
-    for await (const message of runToolsSerially(
-      toolUseMessages,
-      assistantMessage,
-      canUseTool,
-      toolUseContext,
-      shouldSkipPermissionCheck,
-    )) {
-      yield message
-      // progress messages are not sent to the server, so don't need to be accumulated for the next turn
-      if (message.type === 'user') {
-        toolResults.push(message)
-      }
-    }
+  } catch (error) {
+    console.error('Query failed:', error);
+    yield createAssistantMessage(`Error: ${error.message}`);
   }
-
-  if (toolUseContext.abortController.signal.aborted) {
-    yield createAssistantMessage(INTERRUPT_MESSAGE_FOR_TOOL_USE)
-    return
-  }
-
-  // Sort toolResults to match the order of toolUseMessages
-  const orderedToolResults = toolResults.sort((a, b) => {
-    const aIndex = toolUseMessages.findIndex(
-      tu => tu.id === (a.message.content[0] as ToolUseBlock).id,
-    )
-    const bIndex = toolUseMessages.findIndex(
-      tu => tu.id === (b.message.content[0] as ToolUseBlock).id,
-    )
-    return aIndex - bIndex
-  })
-
-  yield* await query(
-    [...messages, assistantMessage, ...orderedToolResults],
-    systemPrompt,
-    context,
-    canUseTool,
-    toolUseContext,
-    getBinaryFeedbackResponse,
-  )
 }
 
 async function* runToolsConcurrently(

@@ -118,7 +118,7 @@ export type GlobalConfig = {
 
 export const DEFAULT_GLOBAL_CONFIG: GlobalConfig = {
   numStartups: 0,
-  autoUpdaterStatus: 'not_configured',
+  autoUpdaterStatus: 'disabled', // Change from 'not_configured' to 'disabled'
   theme: 'dark' as ThemeNames,
   preferredNotifChannel: 'iterm2',
   verbose: false,

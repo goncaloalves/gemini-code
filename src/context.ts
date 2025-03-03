@@ -19,14 +19,14 @@ import { lastX } from './utils/generators.js'
 import { getGitEmail } from './utils/user.js'
 
 /**
- * Find all CLAUDE.md files in the current working directory
+ * Find all GEMINI.md files in the current working directory
  */
 export async function getClaudeFiles(): Promise<string | null> {
   const abortController = new AbortController()
   const timeout = setTimeout(() => abortController.abort(), 3000)
   try {
     const files = await ripGrep(
-      ['--files', '--glob', join('**', '*', 'CLAUDE.md')],
+      ['--files', '--glob', join('**', '*', 'GEMINI.md')],
       getCwd(),
       abortController.signal,
     )
@@ -34,8 +34,8 @@ export async function getClaudeFiles(): Promise<string | null> {
       return null
     }
 
-    // Add instructions for additional CLAUDE.md files
-    return `NOTE: Additional CLAUDE.md files were found. When working in these directories, make sure to read and follow the instructions in the corresponding CLAUDE.md file:\n${files
+    // Add instructions for additional GEMINI.md files
+    return `NOTE: Additional GEMINI.md files were found. When working in these directories, make sure to read and follow the instructions in the corresponding GEMINI.md file:\n${files
       .map(_ => path.join(getCwd(), _))
       .map(_ => `- ${_}`)
       .join('\n')}`

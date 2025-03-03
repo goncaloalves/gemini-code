@@ -324,14 +324,11 @@ export function REPL({
       return
     }
 
-    const [systemPrompt, context, model, maxThinkingTokens] = await Promise.all(
-      [
-        getSystemPrompt(),
-        getContext(),
-        getSlowAndCapableModel(),
-        getMaxThinkingTokens([...messages, lastMessage]),
-      ],
-    )
+    const [systemPrompt, context, maxThinkingTokens] = await Promise.all([
+      getSystemPrompt(),
+      getContext(),
+      getMaxThinkingTokens([...messages, lastMessage]),
+    ])
 
     // query the API
     for await (const message of query(
@@ -345,7 +342,6 @@ export function REPL({
           forkNumber,
           messageLogName,
           tools,
-          slowAndCapableModel: model,
           verbose,
           dangerouslySkipPermissions,
           maxThinkingTokens,
