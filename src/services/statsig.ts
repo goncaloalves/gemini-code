@@ -18,6 +18,12 @@ import { getBetas } from '../utils/betas.js'
 import { getIsGit } from '../utils/git.js'
 import { getSlowAndCapableModel } from '../utils/model.js'
 
+export const MACRO = {
+  VERSION: process.env.npm_package_version ?? '0.0.0',
+  README_URL: 'https://docs.anthropic.com/claude/docs',
+  // Add any other macro constants needed
+}
+
 const gateValues: Record<string, boolean> = {}
 let client: StatsigClient | null = null
 

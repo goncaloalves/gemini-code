@@ -7,6 +7,11 @@ import { getGateValues } from './statsig.js'
 import { SESSION_ID } from '../utils/log.js'
 import { getIsGit } from '../utils/git.js'
 
+export const MACRO = {
+  VERSION: process.env.npm_package_version ?? '0.0.0',
+  // Add other macro constants here as needed
+}
+
 export function initSentry(): void {
   Sentry.init({
     dsn: SENTRY_DSN,

@@ -21,6 +21,12 @@ import Link from './Link.js'
 import { clearTerminal } from '../utils/terminal.js'
 import { PressEnterToContinue } from './PressEnterToContinue.js'
 
+export const MACRO = {
+  VERSION: process.env.npm_package_version ?? '0.0.0',
+  README_URL: 'https://docs.anthropic.com/claude/docs',
+  // Add any other macro constants needed
+}
+
 type StepId = 'theme' | 'oauth' | 'api-key' | 'usage' | 'security'
 
 interface OnboardingStep {

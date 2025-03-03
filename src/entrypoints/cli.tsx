@@ -1,7 +1,7 @@
 #!/usr/bin/env -S node --no-warnings=ExperimentalWarning --enable-source-maps
-import { initSentry } from '../services/sentry.js'
+//import { initSentry } from '../services/sentry.js'
 import { PRODUCT_NAME } from '../constants/product.js'
-initSentry() // Initialize Sentry as early as possible
+//initSentry() // Initialize Sentry as early as possible
 
 // XXX: Without this line (and the Object.keys, even though it seems like it does nothing!),
 // there is a bug in Bun only on Win32 that causes this import to be removed, even though
@@ -80,6 +80,11 @@ import { clearTerminal } from '../utils/terminal.js'
 import { showInvalidConfigDialog } from '../components/InvalidConfigDialog.js'
 import { ConfigParseError } from '../utils/errors.js'
 import { grantReadPermissionForOriginalDir } from '../utils/permissions/filesystem.js'
+
+export const MACRO = {
+  VERSION: process.env.npm_package_version ?? '0.0.0',
+  // Add other macro constants here as needed
+}
 
 export function completeOnboarding(): void {
   const config = getGlobalConfig()
@@ -343,7 +348,7 @@ ${commandList}`,
       'Override verbose mode setting from config',
       () => true,
     )
-    .option('-ea, --enable-architect', 'Enable the Architect tool', () => true)
+    .option('--ea, --enable-architect', 'Enable the Architect tool', () => true)
     .option(
       '-p, --print',
       'Print response and exit (useful for pipes)',

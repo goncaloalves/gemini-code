@@ -5,6 +5,12 @@ import { type StatsigUser } from '@statsig/js-client'
 import { execFileNoThrow } from './execFileNoThrow.js'
 import { logError, SESSION_ID } from './log.js'
 
+export const MACRO = {
+  VERSION: process.env.npm_package_version ?? '0.0.0',
+  README_URL: 'https://docs.anthropic.com/claude/docs',
+  // Add any other macro constants needed
+}
+
 export const getGitEmail = memoize(async (): Promise<string | undefined> => {
   const result = await execFileNoThrow('git', ['config', 'user.email'])
   if (result.code !== 0) {
