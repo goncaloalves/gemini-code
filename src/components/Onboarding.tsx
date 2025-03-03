@@ -20,14 +20,9 @@ import { isAnthropicAuthEnabled } from '../utils/auth.js'
 import Link from './Link.js'
 import { clearTerminal } from '../utils/terminal.js'
 import { PressEnterToContinue } from './PressEnterToContinue.js'
+import { MACRO } from '../constants/macro.js'
 
-export const MACRO = {
-  VERSION: process.env.npm_package_version ?? '0.0.0',
-  README_URL: 'https://docs.anthropic.com/claude/docs',
-  // Add any other macro constants needed
-}
-
-type StepId = 'theme' | 'oauth' | 'api-key' | 'usage' | 'security'
+type StepId = 'theme' | 'usage' | 'security'
 
 interface OnboardingStep {
   id: StepId
@@ -229,46 +224,9 @@ export function Onboarding({ onDone }: Props): React.ReactNode {
     </Box>
   )
 
-  // Create the steps array - determine which steps to include based on reAuth and oauthEnabled
-  const apiKeyNeedingApproval = useMemo(() => {
-    if (process.env.USER_TYPE !== 'ant') {
-      return ''
-    }
-    // Add API key step if needed
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return ''
-    }
-    const customApiKeyTruncated = normalizeApiKeyForConfig(
-      process.env.ANTHROPIC_API_KEY!,
-    )
-    if (getCustomApiKeyStatus(customApiKeyTruncated) === 'new') {
-      return customApiKeyTruncated
-    }
-  }, [])
-
+  // Define all onboarding steps
   const steps: OnboardingStep[] = []
   steps.push({ id: 'theme', component: themeStep })
-
-  // Add OAuth step if Anthropic auth is enabled and user is not logged in
-  if (oauthEnabled) {
-    steps.push({
-      id: 'oauth',
-      component: <ConsoleOAuthFlow onDone={goToNextStep} />,
-    })
-  }
-
-  // Add API key step if needed
-  if (apiKeyNeedingApproval) {
-    steps.push({
-      id: 'api-key',
-      component: (
-        <ApproveApiKey
-          customApiKeyTruncated={apiKeyNeedingApproval}
-          onDone={goToNextStep}
-        />
-      ),
-    })
-  }
 
   // Add security step
   steps.push({ id: 'security', component: securityStep })

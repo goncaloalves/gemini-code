@@ -17,6 +17,7 @@ import { accessSync } from 'fs'
 import { CLAUDE_BASE_DIR } from './env.js'
 import { logEvent, getDynamicConfig } from '../services/statsig.js'
 import { lt } from 'semver'
+import { MACRO } from '../constants/macro.js'
 
 export type InstallStatus =
   | 'success'

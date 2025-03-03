@@ -40,69 +40,7 @@ export function Config({ onClose }: Props): React.ReactNode {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const exitState = useExitOnCtrlCD(() => process.exit(0))
 
-  // TODO: Add MCP servers
   const settings: Setting[] = [
-    // Global settings
-    ...(process.env.ANTHROPIC_API_KEY
-      ? [
-          {
-            id: 'apiKey',
-            label: `Use custom API key: ${chalk.bold(normalizeApiKeyForConfig(process.env.ANTHROPIC_API_KEY))}`,
-            value: Boolean(
-              process.env.ANTHROPIC_API_KEY &&
-                globalConfig.customApiKeyResponses?.approved?.includes(
-                  normalizeApiKeyForConfig(process.env.ANTHROPIC_API_KEY),
-                ),
-            ),
-            type: 'boolean' as const,
-            onChange(useCustomKey: boolean) {
-              const config = { ...getGlobalConfig() }
-              if (!config.customApiKeyResponses) {
-                config.customApiKeyResponses = {
-                  approved: [],
-                  rejected: [],
-                }
-              }
-              if (!config.customApiKeyResponses.approved) {
-                config.customApiKeyResponses.approved = []
-              }
-              if (!config.customApiKeyResponses.rejected) {
-                config.customApiKeyResponses.rejected = []
-              }
-              if (process.env.ANTHROPIC_API_KEY) {
-                const truncatedKey = normalizeApiKeyForConfig(
-                  process.env.ANTHROPIC_API_KEY,
-                )
-                if (useCustomKey) {
-                  config.customApiKeyResponses.approved = [
-                    ...config.customApiKeyResponses.approved.filter(
-                      k => k !== truncatedKey,
-                    ),
-                    truncatedKey,
-                  ]
-                  config.customApiKeyResponses.rejected =
-                    config.customApiKeyResponses.rejected.filter(
-                      k => k !== truncatedKey,
-                    )
-                } else {
-                  config.customApiKeyResponses.approved =
-                    config.customApiKeyResponses.approved.filter(
-                      k => k !== truncatedKey,
-                    )
-                  config.customApiKeyResponses.rejected = [
-                    ...config.customApiKeyResponses.rejected.filter(
-                      k => k !== truncatedKey,
-                    ),
-                    truncatedKey,
-                  ]
-                }
-              }
-              saveGlobalConfig(config)
-              setGlobalConfig(config)
-            },
-          },
-        ]
-      : []),
     {
       id: 'verbose',
       label: 'Verbose output',
@@ -153,24 +91,6 @@ export function Config({ onClose }: Props): React.ReactNode {
       // Log any changes that were made
       // TODO: Make these proper messages
       const changes: string[] = []
-      // Check for API key changes
-      const initialUsingCustomKey = Boolean(
-        process.env.ANTHROPIC_API_KEY &&
-          initialConfig.current.customApiKeyResponses?.approved?.includes(
-            normalizeApiKeyForConfig(process.env.ANTHROPIC_API_KEY),
-          ),
-      )
-      const currentUsingCustomKey = Boolean(
-        process.env.ANTHROPIC_API_KEY &&
-          globalConfig.customApiKeyResponses?.approved?.includes(
-            normalizeApiKeyForConfig(process.env.ANTHROPIC_API_KEY),
-          ),
-      )
-      if (initialUsingCustomKey !== currentUsingCustomKey) {
-        changes.push(
-          `  ⎿  ${currentUsingCustomKey ? 'Enabled' : 'Disabled'} custom API key`,
-        )
-      }
 
       if (globalConfig.verbose !== initialConfig.current.verbose) {
         changes.push(`  ⎿  Set verbose to ${chalk.bold(globalConfig.verbose)}`)

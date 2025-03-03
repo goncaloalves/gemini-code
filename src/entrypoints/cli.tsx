@@ -3,12 +3,6 @@
 import { PRODUCT_NAME } from '../constants/product.js'
 //initSentry() // Initialize Sentry as early as possible
 
-// XXX: Without this line (and the Object.keys, even though it seems like it does nothing!),
-// there is a bug in Bun only on Win32 that causes this import to be removed, even though
-// its use is solely because of its side-effects.
-import * as dontcare from '@anthropic-ai/sdk/shims/node'
-Object.keys(dontcare)
-
 import React from 'react'
 import { ReadStream } from 'tty'
 import { openSync, existsSync } from 'fs'
@@ -81,10 +75,7 @@ import { showInvalidConfigDialog } from '../components/InvalidConfigDialog.js'
 import { ConfigParseError } from '../utils/errors.js'
 import { grantReadPermissionForOriginalDir } from '../utils/permissions/filesystem.js'
 
-export const MACRO = {
-  VERSION: process.env.npm_package_version ?? '0.0.0',
-  // Add other macro constants here as needed
-}
+import { MACRO } from '../constants/macro.js'
 
 export function completeOnboarding(): void {
   const config = getGlobalConfig()
@@ -125,30 +116,6 @@ async function showSetupScreens(
     })
   }
 
-  // Check for custom API key (only allowed for ants)
-  if (process.env.ANTHROPIC_API_KEY && process.env.USER_TYPE === 'ant') {
-    const customApiKeyTruncated = normalizeApiKeyForConfig(
-      process.env.ANTHROPIC_API_KEY!,
-    )
-    const keyStatus = getCustomApiKeyStatus(customApiKeyTruncated)
-    if (keyStatus === 'new') {
-      await new Promise<void>(resolve => {
-        render(
-          <ApproveApiKey
-            customApiKeyTruncated={customApiKeyTruncated}
-            onDone={async () => {
-              await clearTerminal()
-              resolve()
-            }}
-          />,
-          {
-            exitOnCtrlC: false,
-          },
-        )
-      })
-    }
-  }
-
   // In non-interactive or dangerously-skip-permissions mode, skip the trust dialog
   if (!print && !dangerouslySkipPermissions) {
     if (!checkHasTrustDialogAccepted()) {
@@ -162,11 +129,6 @@ async function showSetupScreens(
           exitOnCtrlC: false,
         })
       })
-    }
-
-    // After trust dialog, check for any mcprc servers that need approval
-    if (process.env.USER_TYPE === 'ant') {
-      await handleMcprcServerApprovals()
     }
   }
 }

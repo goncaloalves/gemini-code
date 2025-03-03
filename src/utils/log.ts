@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto'
 import envPaths from 'env-paths'
 import { promises as fsPromises } from 'fs'
 import type { LogOption, SerializedMessage } from '../types/logs.js'
+import { MACRO } from '../constants/macro.js'
 
 const IN_MEMORY_ERROR_LOG: Array<{
   error: string
