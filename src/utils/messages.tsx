@@ -524,9 +524,9 @@ export function isNotEmptyMessage(message: Message): boolean {
   if (message.message.content[0]!.type !== 'text') {
     return true
   }
-
+console.log(message)
   return (
-    message.message.content[0]!.text.trim().length > 0 &&
+    //message.message.content[0]!.text.trim().length > 0 &&
     message.message.content[0]!.text !== NO_CONTENT_MESSAGE &&
     message.message.content[0]!.text !== INTERRUPT_MESSAGE_FOR_TOOL_USE
   )
